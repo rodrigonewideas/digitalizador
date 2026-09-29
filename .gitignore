@@ -1,0 +1,41 @@
+# --- Segredos / ambiente (NUNCA versionar) ---
+.env
+*.env
+!*.env.example
+infra/.env
+
+# --- Certificados / chaves ---
+*.pfx
+*.p12
+*.pem
+*.key
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Node / frontend ---
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# --- Dados / dumps pesados (não versionar acervo) ---
+*.gdb
+*.fdb
+etl/_work/
+storage/
+
+# --- Editores / SO ---
+.vscode/
+.idea/
+.DS_Store

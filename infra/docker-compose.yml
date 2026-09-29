@@ -1,0 +1,46 @@
+# Ambiente de DESENVOLVIMENTO local (não é deploy de servidor).
+# Uso:
+#   cd infra && cp .env.example .env  &&  editar segredos  &&  docker compose up --build
+name: digitalizador
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"   # exposto só para dev; ajuste DB_PORT se 5432 estiver em uso
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  backend:
+    build:
+      context: ..                 # raiz do repo (para copiar backend/ e database/)
+      dockerfile: backend/Dockerfile
+    env_file: .env
+    environment:
+      DIGITALIZADOR_SCHEMA_SQL: /app/database/schema.sql
+    depends_on:
+      db:
+        condition: service_healthy
+    # Aplica as migrations e sobe a API com reload (dev)
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    volumes:
+      - ../backend:/app          # hot-reload do código
+      - ../database:/app/database:ro
+      - storagedata:/data/storage  # guarda de arquivos (POSIX)
+    ports:
+      - "${API_PORT:-8000}:8000"
+
+volumes:
+  pgdata:
+  storagedata:
