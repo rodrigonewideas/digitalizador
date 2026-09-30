@@ -88,9 +88,17 @@ export function ConsultaPage() {
                       onClick={() => navigate(`/registros/${r.id}`)}
                     >
                       <td className="num">{r.id}</td>
-                      <td className="num">{r.contrato ?? "—"}</td>
-                      <td>{r.cessionario?.nr_terreno ?? r.lote ?? "—"}</td>
-                      <td>{r.cessionario?.nome_cessionario ?? <span className="muted">—</span>}</td>
+                      <td className="num">{r.cessionario?.nr_contrato ?? r.contrato ?? "—"}</td>
+                      <td>
+                        {r.cessionario?.nr_terreno
+                          ? `${r.cessionario.tipo_terreno ?? ""} ${r.cessionario.nr_terreno}`.trim()
+                          : (r.lote ?? "—")}
+                      </td>
+                      <td>
+                        {r.cessionario?.cessionarios?.length
+                          ? r.cessionario.cessionarios.join(", ")
+                          : (r.cessionario?.nome_cessionario ?? <span className="muted">—</span>)}
+                      </td>
                       <td className="num">{r.qtde_documentos}</td>
                       <td className="num">
                         {r.qtde_refugados > 0 ? (
