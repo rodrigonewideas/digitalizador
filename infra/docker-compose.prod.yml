@@ -36,7 +36,8 @@ services:
       sh -c "alembic upgrade head &&
              uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'"
     volumes:
-      - storagedata:/data/storage
+      # Disco de imagens (700 GB, montado em /data no host) — guarda definitiva
+      - /data/storage:/data/storage
     restart: unless-stopped
     # Sem porta publicada: acessível só via Nginx (serviço frontend).
 
@@ -54,4 +55,3 @@ services:
 
 volumes:
   pgdata:
-  storagedata:
