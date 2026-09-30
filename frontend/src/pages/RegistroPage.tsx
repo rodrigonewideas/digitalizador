@@ -2,6 +2,7 @@ import { Fragment, useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { api, API_BASE, ApiError, jsonBody, tokens } from "../api/client";
+import { Modal } from "../components/Modal";
 import type {
   AssinaturasResumo,
   Certificado,
@@ -10,6 +11,74 @@ import type {
   RegistroBusca,
   TipoDocumento,
 } from "../api/types";
+
+function useImagemDocumento(docId: number, versao: "full" | "thumb") {
+  const [url, setUrl] = useState<string | null>(null);
+  const [falhou, setFalhou] = useState(false);
+
+  useEffect(() => {
+    let vivo = true;
+    let objeto: string | null = null;
+    (async () => {
+      try {
+        const blob = await api<Blob>(`/documentos/${docId}/imagem?versao=${versao}`);
+        objeto = URL.createObjectURL(blob);
+        if (vivo) setUrl(objeto);
+        else URL.revokeObjectURL(objeto);
+      } catch {
+        if (vivo) setFalhou(true);
+      }
+    })();
+    return () => {
+      vivo = false;
+      if (objeto) URL.revokeObjectURL(objeto);
+    };
+  }, [docId, versao]);
+
+  return { url, falhou };
+}
+
+function ThumbDocumento({ docId, onAbrir }: { docId: number; onAbrir: () => void }) {
+  const { url, falhou } = useImagemDocumento(docId, "thumb");
+  if (falhou)
+    return <span className="muted" style={{ fontSize: ".72rem" }}>sem imagem</span>;
+  if (!url) return <span className="muted">…</span>;
+  return (
+    <img
+      src={url}
+      alt={`Documento ${docId}`}
+      style={{ height: 46, borderRadius: 4, cursor: "zoom-in", display: "block" }}
+      onClick={onAbrir}
+    />
+  );
+}
+
+function ImagemModal({ doc, onClose }: { doc: Documento; onClose: () => void }) {
+  const { url, falhou } = useImagemDocumento(doc.id, "full");
+  return (
+    <Modal
+      titulo={`${doc.tipo_descricao ?? "Documento"} · nº ${doc.id}${
+        doc.nr_folha ? ` · folha ${doc.nr_folha}` : ""
+      }${doc.face ? ` · ${doc.face === "F" ? "frente" : "verso"}` : ""}`}
+      onClose={onClose}
+      largura="min(92vw, 68rem)"
+    >
+      <div style={{ textAlign: "center", minHeight: "20rem" }}>
+        {falhou ? (
+          <p className="empty">Imagem ainda não disponível no storage.</p>
+        ) : url ? (
+          <img
+            src={url}
+            alt={`Documento ${doc.id}`}
+            style={{ maxWidth: "100%", maxHeight: "72vh", borderRadius: 6 }}
+          />
+        ) : (
+          <p className="muted" style={{ paddingTop: "8rem" }}>Carregando imagem…</p>
+        )}
+      </div>
+    </Modal>
+  );
+}
 
 export function RegistroPage() {
   const { id } = useParams();
@@ -20,6 +89,7 @@ export function RegistroPage() {
   const [motivos, setMotivos] = useState<Motivo[]>([]);
   const [certificados, setCertificados] = useState<Certificado[]>([]);
   const [selecionado, setSelecionado] = useState<number | null>(null);
+  const [verImagem, setVerImagem] = useState<Documento | null>(null);
   const [erro, setErro] = useState("");
 
   const carregarDocs = useCallback(async () => {
@@ -77,6 +147,7 @@ export function RegistroPage() {
             <table>
               <thead>
                 <tr>
+                  <th>Imagem</th>
                   <th>Documento</th>
                   <th>Folha</th>
                   <th>F/V</th>
@@ -90,6 +161,9 @@ export function RegistroPage() {
                 {docs.map((d) => (
                   <Fragment key={d.id}>
                     <tr>
+                      <td>
+                        <ThumbDocumento docId={d.id} onAbrir={() => setVerImagem(d)} />
+                      </td>
                       <td>{d.tipo_descricao ?? <span className="muted">sem tipo</span>}</td>
                       <td className="num">
                         {d.nr_folha ?? "—"}
@@ -122,7 +196,7 @@ export function RegistroPage() {
                     </tr>
                     {selecionado === d.id && (
                       <tr>
-                        <td colSpan={7} style={{ padding: 0 }}>
+                        <td colSpan={8} style={{ padding: 0 }}>
                           <DocumentoAcoes
                             doc={d}
                             motivos={motivos}
@@ -139,6 +213,8 @@ export function RegistroPage() {
           </div>
         )}
       </div>
+
+      {verImagem && <ImagemModal doc={verImagem} onClose={() => setVerImagem(null)} />}
     </>
   );
 }

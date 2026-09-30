@@ -37,6 +37,9 @@ class Settings(BaseSettings):
 
     # --- Storage (sistema de arquivos POSIX) ---
     storage_root: str = "/data/storage"  # raiz padrão de guarda (dev/bootstrap)
+    # Raiz das imagens legadas migradas do Windows (share Imagens, sem BKP).
+    # Os caminhos de documento_legado (P:\pasta\FULL\arq.jpg) resolvem a partir daqui.
+    legado_root: str = "/data/legado"
 
     # --- CORS (origens liberadas para o frontend) ---
     cors_origins: list[str] = []

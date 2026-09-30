@@ -1,13 +1,16 @@
-"""Endpoints de documento: upload do arquivo base, assinatura A1 e consulta de assinaturas."""
+"""Endpoints de documento: upload do arquivo base, assinatura A1, consulta de assinaturas
+e imagem legada (Fase 3b)."""
 from __future__ import annotations
 
 from fastapi import APIRouter, File, HTTPException, Response, UploadFile, status
+from fastapi.responses import FileResponse
+from sqlalchemy import text
 
 from app.api.deps import CurrentUsuario, SessionDep
 from app.models import ArquivoPapel, Documento
 from app.schemas.assinatura import AssinarRequest, AssinaturaOut
 from app.schemas.consulta import ComentarioRequest
-from app.services import anexacao_service, assinatura_service, storage
+from app.services import anexacao_service, assinatura_service, legado_service, storage
 
 router = APIRouter(prefix="/documentos", tags=["documentos"])
 
@@ -63,6 +66,32 @@ def comentario(
         "comentario": refugo.comentario,
         "refugada": dados.refugar,
     }
+
+
+@router.get("/{documento_id}/imagem")
+def imagem_legada(
+    documento_id: int, db: SessionDep, _usuario: CurrentUsuario, versao: str = "full"
+) -> FileResponse:
+    """Serve a imagem legada do documento (migrada do sistema antigo).
+
+    versao=full (padrão) ou thumb (miniatura; cai para a full se não houver).
+    """
+    row = db.execute(
+        text("SELECT legacy_image_path, legacy_thumb_path FROM documento_legado "
+             "WHERE documento_id = :id"),
+        {"id": documento_id},
+    ).first()
+    if row is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Documento sem imagem legada")
+    legacy = row[1] if versao == "thumb" else row[0]
+    arquivo = legado_service.resolver(legacy)
+    if arquivo is None and versao == "thumb":
+        arquivo = legado_service.resolver(row[0])
+    if arquivo is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, "Imagem ainda não disponível no storage"
+        )
+    return FileResponse(arquivo, media_type=legado_service.mime_de(arquivo))
 
 
 @router.get("/{documento_id}/assinaturas")

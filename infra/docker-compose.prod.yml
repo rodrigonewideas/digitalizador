@@ -38,6 +38,8 @@ services:
     volumes:
       # Disco de imagens (700 GB, montado em /data no host) — guarda definitiva
       - /data/storage:/data/storage
+      # Imagens legadas copiadas do Windows (share Imagens, sem BKP) — só leitura
+      - /data/legado:/data/legado:ro
     restart: unless-stopped
     # Sem porta publicada: acessível só via Nginx (serviço frontend).
 
