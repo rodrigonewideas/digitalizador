@@ -20,6 +20,7 @@ dependencies = [
     "pdfminer.six>=20240706",# detecção de conteúdo no rodapé
     "reportlab>=4.2",        # geração de PDF base / carimbo
     "firebirdsql>=1.2",      # integração comercial (Firebird PDV_BONFIM) — puro Python, sem libfbclient
+    "passlib>=1.7",          # exigido pelo firebirdsql p/ auth legado (FB 1.5 / des_crypt)
 ]
 
 [project.optional-dependencies]
