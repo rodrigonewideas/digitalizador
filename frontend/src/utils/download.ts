@@ -60,16 +60,61 @@ export async function baixarComoZip(
   return { ok, falhas };
 }
 
-/** Abre cada documento selecionado numa aba (blob autenticado). */
-export async function abrirEmAbas(docs: DocComRegistro[]): Promise<void> {
+/**
+ * Abre UMA guia com todos os documentos selecionados em sequência (pronta para
+ * imprimir com Ctrl+P). Uma única janela evita o bloqueador de pop-ups; a guia
+ * deve ser aberta de forma síncrona (dentro do clique), por isso primeiro
+ * abre-se o esqueleto e as imagens chegam em seguida.
+ */
+export async function abrirSelecionadosEmGuia(docs: DocComRegistro[]): Promise<boolean> {
+  const w = window.open("", "_blank");
+  if (!w) return false; // pop-up bloqueado
+  const dw = w.document;
+  dw.title = "Documentos selecionados — Digitalizador Bonfim";
+  dw.head.innerHTML = `<meta charset="utf-8"><style>
+    body{margin:0;background:#1c211d;font:14px system-ui;padding:16px}
+    h1{font-size:15px;font-weight:600;margin:0 0 14px;color:#e8ede9}
+    .doc{background:#fff;color:#222;border-radius:8px;margin:0 auto 18px;max-width:980px;padding:10px}
+    .doc header{font-size:12px;color:#444;padding:2px 4px 8px}
+    .doc img{width:100%;display:block;border-radius:4px}
+    .falta{padding:30px;text-align:center;color:#888}
+    @media print{body{background:#fff;padding:0}h1{display:none}
+      .doc{page-break-after:always;max-width:none;margin:0;border-radius:0;padding:0}
+      .doc header{padding:4px 0}}
+  </style>`;
+  dw.body.innerHTML = "";
+  const titulo = dw.createElement("h1");
+  titulo.textContent = `Documentos selecionados (0/${docs.length})…`;
+  dw.body.appendChild(titulo);
+
+  let feitos = 0;
   for (const d of docs) {
+    const sec = dw.createElement("section");
+    sec.className = "doc";
+    const cab = dw.createElement("header");
+    const contrato = d.registro.cessionario?.nr_contrato ?? String(d.registro.contrato ?? "—");
+    const nome = d.registro.cessionario?.nome_cessionario ?? "";
+    cab.textContent =
+      `${d.tipo_descricao ?? "Documento"} · nº ${d.id} · contrato ${contrato}` +
+      (nome ? ` · ${nome}` : "") +
+      ` · pg ${d.nr_folha ?? "?"}${d.total_folhas ? `/${d.total_folhas}` : ""}` +
+      (d.face ? (d.face === "F" ? " · frente" : " · verso") : "");
+    sec.appendChild(cab);
     try {
       const blob = await buscarImagemBlob(d.id, "full");
-      const url = URL.createObjectURL(blob);
-      window.open(url, "_blank");
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      const img = dw.createElement("img");
+      img.src = URL.createObjectURL(blob);
+      sec.appendChild(img);
     } catch {
-      /* documento sem imagem: ignora */
+      const p = dw.createElement("p");
+      p.className = "falta";
+      p.textContent = "Imagem ainda não disponível no storage.";
+      sec.appendChild(p);
     }
+    dw.body.appendChild(sec);
+    feitos += 1;
+    titulo.textContent = `Documentos selecionados (${feitos}/${docs.length})…`;
   }
+  titulo.textContent = `Documentos selecionados (${docs.length}) — Ctrl+P para imprimir`;
+  return true;
 }

@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import type { Documento, RegistroBusca } from "../api/types";
 import {
-  abrirEmAbas,
+  abrirSelecionadosEmGuia,
   baixarComoZip,
   buscarImagemBlob,
   type DocComRegistro,
@@ -137,8 +137,15 @@ export function VisualizadorUnificado({ registros }: { registros: RegistroBusca[
           <button className="btn sm" type="button" onClick={baixarSelecionados}>
             ⬇ Baixar ZIP
           </button>
-          <button className="btn soft sm" type="button" onClick={() => abrirEmAbas(selecionados)}>
-            ↗ Abrir em abas
+          <button
+            className="btn soft sm"
+            type="button"
+            onClick={async () => {
+              const ok = await abrirSelecionadosEmGuia(selecionados);
+              setMsg(ok ? "" : "O navegador bloqueou a nova guia — permita pop-ups para este site.");
+            }}
+          >
+            ↗ Abrir/Imprimir
           </button>
           <button className="btn ghost sm" type="button" onClick={() => setMarcados(new Set())}>
             Limpar
