@@ -74,7 +74,7 @@ export function ConsultaPage() {
                   <tr>
                     <th>Registro</th>
                     <th>Contrato</th>
-                    <th>Lote</th>
+                    <th>Terreno</th>
                     <th>Cessionário</th>
                     <th className="num">Documentos</th>
                     <th className="num">Refugados</th>
@@ -89,7 +89,7 @@ export function ConsultaPage() {
                     >
                       <td className="num">{r.id}</td>
                       <td className="num">{r.contrato ?? "—"}</td>
-                      <td>{r.lote ?? "—"}</td>
+                      <td>{r.cessionario?.nr_terreno ?? r.lote ?? "—"}</td>
                       <td>{r.cessionario?.nome_cessionario ?? <span className="muted">—</span>}</td>
                       <td className="num">{r.qtde_documentos}</td>
                       <td className="num">

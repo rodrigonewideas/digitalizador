@@ -50,9 +50,26 @@ class Settings(BaseSettings):
     smtp_password: str | None = None
     smtp_from: str | None = None
 
+    # --- Integração comercial (Firebird "solution"/PDV_BONFIM) — SOMENTE LEITURA ---
+    # Resolve terreno(lote)/cessionário do sistema do cliente. Sem estes valores a
+    # integração fica desligada e a consulta por lote apenas não retorna (fail-safe).
+    pdv_fb_host: str | None = None            # ex.: 192.168.5.232
+    pdv_fb_port: int = 3050
+    pdv_fb_database: str | None = None        # caminho/alias no servidor, ex.: D:\solution\data\PDV_BONFIM.GDB
+    pdv_fb_user: str | None = None            # ex.: SYSDBA
+    pdv_fb_password: str | None = None
+    pdv_fb_charset: str = "ISO8859_1"         # Firebird legado costuma ser latin-1
+
     @property
     def is_prod(self) -> bool:
         return self.environment.lower() in {"prod", "production"}
+
+    @property
+    def pdv_habilitado(self) -> bool:
+        return bool(
+            self.pdv_fb_host and self.pdv_fb_database
+            and self.pdv_fb_user and self.pdv_fb_password
+        )
 
 
 @lru_cache

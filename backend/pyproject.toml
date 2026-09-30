@@ -19,6 +19,7 @@ dependencies = [
     "pypdf>=5.0",            # manipulação de PDF (páginas)
     "pdfminer.six>=20240706",# detecção de conteúdo no rodapé
     "reportlab>=4.2",        # geração de PDF base / carimbo
+    "firebirdsql>=1.2",      # integração comercial (Firebird PDV_BONFIM) — puro Python, sem libfbclient
 ]
 
 [project.optional-dependencies]

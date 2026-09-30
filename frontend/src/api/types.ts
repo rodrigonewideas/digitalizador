@@ -12,7 +12,10 @@ export interface Usuario {
 
 export interface Cessionario {
   contrato: number | null;
+  nr_contrato: string | null;
+  nr_terreno: string | null;
   nome_cessionario: string | null;
+  cessionarios: string[] | null;
   cpf: string | null;
   tipo_terreno: string | null;
   falecido: string | null;

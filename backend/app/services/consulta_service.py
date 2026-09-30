@@ -22,23 +22,29 @@ def buscar_registros(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
             "Informe ao menos um filtro: lote, contrato ou registro_id.",
         )
+    gw = get_gateway(db)
     q = select(Registro)
     if registro_id:
         q = q.where(Registro.id == registro_id)
     if contrato:
         q = q.where(Registro.contrato == contrato)
     if lote:
-        q = q.where(Registro.lote == str(lote))
+        # "Nº do lote" = nr_terreno no sistema comercial (legado): resolve o terreno
+        # para os contratos e filtra os registros do digitalizador por eles.
+        contratos = gw.contratos_por_terreno(str(lote))
+        if not contratos:
+            return []
+        q = q.where(Registro.contrato.in_(contratos))
     registros = list(db.scalars(q.order_by(Registro.id).limit(limite)))
     ids = [r.id for r in registros]
 
     docs = _contagem(db, Documento.registro_id, ids)
     refug = _contagem(db, Documento.registro_id, ids, Documento.refugada.is_(True))
-    gw = get_gateway(db)
+    infos = gw.resolver_contratos([r.contrato for r in registros if r.contrato is not None])
 
     resultado = []
     for r in registros:
-        info = gw.resolver_contrato(r.contrato)
+        info = infos.get(r.contrato) if r.contrato is not None else None
         resultado.append(
             {
                 "id": r.id,
