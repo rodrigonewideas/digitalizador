@@ -20,6 +20,7 @@ RUN pip install .
 # Código de migrations + DDL canônico
 COPY backend/alembic.ini ./
 COPY backend/migrations ./migrations
+COPY backend/scripts ./scripts
 COPY database ./database
 
 RUN mkdir -p /data/storage && chown -R app:app /app /data/storage
