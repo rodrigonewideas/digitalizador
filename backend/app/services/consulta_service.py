@@ -15,12 +15,18 @@ def buscar_registros(
     lote: str | None = None,
     contrato: int | None = None,
     registro_id: int | None = None,
+    cessionario: str | None = None,
     limite: int = 100,
 ) -> list[dict]:
-    if not any([lote, contrato, registro_id]):
+    if not any([lote, contrato, registro_id, cessionario]):
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
-            "Informe ao menos um filtro: lote, contrato ou registro_id.",
+            "Informe ao menos um filtro: lote, contrato, registro_id ou cessionario.",
+        )
+    if cessionario and len(cessionario.strip()) < 3:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "Nome do cessionário: informe ao menos 3 letras.",
         )
     gw = get_gateway(db)
     q = select(Registro)
@@ -32,6 +38,11 @@ def buscar_registros(
         # "Nº do lote" = nr_terreno no sistema comercial (legado): resolve o terreno
         # para os contratos e filtra os registros do digitalizador por eles.
         contratos = gw.contratos_por_terreno(str(lote))
+        if not contratos:
+            return []
+        q = q.where(Registro.contrato.in_(contratos))
+    if cessionario:
+        contratos = gw.contratos_por_cessionario(cessionario.strip())
         if not contratos:
             return []
         q = q.where(Registro.contrato.in_(contratos))

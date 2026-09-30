@@ -2,6 +2,7 @@ import { Fragment, useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { api, API_BASE, ApiError, jsonBody, tokens } from "../api/client";
+import { ThumbDocumento, useImagemDocumento } from "../components/ImagemDoc";
 import { Modal } from "../components/Modal";
 import type {
   AssinaturasResumo,
@@ -11,47 +12,6 @@ import type {
   RegistroBusca,
   TipoDocumento,
 } from "../api/types";
-
-function useImagemDocumento(docId: number, versao: "full" | "thumb") {
-  const [url, setUrl] = useState<string | null>(null);
-  const [falhou, setFalhou] = useState(false);
-
-  useEffect(() => {
-    let vivo = true;
-    let objeto: string | null = null;
-    (async () => {
-      try {
-        const blob = await api<Blob>(`/documentos/${docId}/imagem?versao=${versao}`);
-        objeto = URL.createObjectURL(blob);
-        if (vivo) setUrl(objeto);
-        else URL.revokeObjectURL(objeto);
-      } catch {
-        if (vivo) setFalhou(true);
-      }
-    })();
-    return () => {
-      vivo = false;
-      if (objeto) URL.revokeObjectURL(objeto);
-    };
-  }, [docId, versao]);
-
-  return { url, falhou };
-}
-
-function ThumbDocumento({ docId, onAbrir }: { docId: number; onAbrir: () => void }) {
-  const { url, falhou } = useImagemDocumento(docId, "thumb");
-  if (falhou)
-    return <span className="muted" style={{ fontSize: ".72rem" }}>sem imagem</span>;
-  if (!url) return <span className="muted">…</span>;
-  return (
-    <img
-      src={url}
-      alt={`Documento ${docId}`}
-      style={{ height: 46, borderRadius: 4, cursor: "zoom-in", display: "block" }}
-      onClick={onAbrir}
-    />
-  );
-}
 
 function ImagemModal({ doc, onClose }: { doc: Documento; onClose: () => void }) {
   const { url, falhou } = useImagemDocumento(doc.id, "full");

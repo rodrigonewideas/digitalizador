@@ -17,11 +17,14 @@ def buscar(
     lote: str | None = None,
     contrato: int | None = None,
     registro_id: int | None = None,
+    cessionario: str | None = None,
     limite: int = 100,
 ) -> list[RegistroBuscaOut]:
-    """Busca por lote/contrato/id; devolve nº de documentos e o cessionário (via gateway)."""
+    """Busca por lote/contrato/id/nome do cessionário; devolve nº de documentos
+    e os dados comerciais (via gateway)."""
     return consulta_service.buscar_registros(
-        db, lote=lote, contrato=contrato, registro_id=registro_id, limite=limite
+        db, lote=lote, contrato=contrato, registro_id=registro_id,
+        cessionario=cessionario, limite=limite,
     )
 
 

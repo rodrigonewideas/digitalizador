@@ -19,6 +19,8 @@ export interface Cessionario {
   cpf: string | null;
   tipo_terreno: string | null;
   falecido: string | null;
+  dt_venda: string | null;
+  vendedor: string | null;
 }
 
 export interface RegistroBusca {
