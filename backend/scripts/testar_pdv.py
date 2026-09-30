@@ -41,8 +41,18 @@ def main() -> int:
             user=s.pdv_fb_user, password=s.pdv_fb_password, charset=s.pdv_fb_charset,
         ) as con:
             cur = con.cursor()
-            cur.execute("select rdb$get_context('SYSTEM','ENGINE_VERSION') from rdb$database")
-            print(f"  OK — Firebird engine: {cur.fetchone()[0]}")
+            try:
+                # FB >= 2.0
+                cur.execute("select rdb$get_context('SYSTEM','ENGINE_VERSION') from rdb$database")
+                print(f"  OK — Firebird engine: {cur.fetchone()[0]}")
+            except Exception:  # noqa: BLE001 - FB 1.5 não tem RDB$GET_CONTEXT
+                cur = con.cursor()
+                cur.execute(
+                    "select count(*) from rdb$relations where rdb$relation_name = 'CONTRATO'"
+                )
+                tem = cur.fetchone()[0]
+                print("  OK — conectado (FB < 2.0, provavelmente 1.5); "
+                      f"tabela CONTRATO {'encontrada' if tem else 'NAO encontrada'}")
     except Exception as e:  # noqa: BLE001
         print(f"  FALHOU: {type(e).__name__}: {e}")
         print("  -> confira rede (Bonfim->192.168.5.232:3050), caminho do .gdb, usuário/senha e charset.")
