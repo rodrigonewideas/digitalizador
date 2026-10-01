@@ -107,13 +107,20 @@ fi
 ok "Migrations aplicadas pelo backend no start (alembic upgrade head)."
 
 # ---- 4. smoke test de saúde ----
-log "Aguardando a API responder (/api/v1/health/ready)..."
 URL="http://localhost:${WEB_PORT}/api/v1/health/ready"
-for i in $(seq 1 30); do
-  if curl -fsS "$URL" >/dev/null 2>&1; then ok "API saudável: $URL"; break; fi
-  [ "$i" = 30 ] && { warn "A API não respondeu em 30 tentativas. Logs:"; dc logs --tail=40 backend || true; die "deploy subiu mas o health falhou."; }
-  sleep 2
-done
+if command -v curl >/dev/null 2>&1; then HC=(curl -fsS "$URL")
+elif command -v wget >/dev/null 2>&1; then HC=(wget -qO- "$URL")
+else HC=(); fi
+if [ ${#HC[@]} -eq 0 ]; then
+  warn "curl/wget ausentes — pulando smoke test. Verifique à mão: $URL"
+else
+  log "Aguardando a API responder (/api/v1/health/ready)..."
+  for i in $(seq 1 30); do
+    if "${HC[@]}" >/dev/null 2>&1; then ok "API saudável: $URL"; break; fi
+    [ "$i" = 30 ] && { warn "A API não respondeu em 30 tentativas. Logs:"; dc logs --tail=40 backend || true; die "deploy subiu mas o health falhou."; }
+    sleep 2
+  done
+fi
 
 # ---- 5. limpeza de imagens antigas (dangling) ----
 log "Removendo imagens órfãs (dangling)..."
